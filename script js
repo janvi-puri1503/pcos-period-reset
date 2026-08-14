@@ -1,0 +1,76 @@
+// Simple period tracker using localStorage
+
+const form = document.getElementById("period-form");
+const periodList = document.getElementById("period-list");
+const clearBtn = document.getElementById("clear-periods");
+
+if (form && periodList) {
+  loadPeriods();
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const dateVal = document.getElementById("period-date").value;
+    const flowVal = document.getElementById("flow").value;
+    const symptomsVal = document.getElementById("symptoms").value.trim();
+
+    if (!dateVal) return;
+
+    const entry = {
+      id: Date.now(),
+      date: dateVal,
+      flow: flowVal,
+      symptoms: symptomsVal || "-",
+    };
+
+    const entries = getPeriodEntries();
+    entries.push(entry);
+    localStorage.setItem("pcos_periods", JSON.stringify(entries));
+
+    form.reset();
+    loadPeriods();
+  });
+
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      if (confirm("Clear all period entries? This cannot be undone.")) {
+        localStorage.removeItem("pcos_periods");
+        loadPeriods();
+      }
+    });
+  }
+}
+
+function getPeriodEntries() {
+  try {
+    const raw = localStorage.getItem("pcos_periods");
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function loadPeriods() {
+  if (!periodList) return;
+  const entries = getPeriodEntries();
+
+  periodList.innerHTML = "";
+
+  if (entries.length === 0) {
+    periodList.innerHTML = "<li>No entries yet. Add your first period start date above.</li>";
+    return;
+  }
+
+  // Sort by date descending
+  entries.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  entries.forEach((e) => {
+    const li = document.createElement("li");
+    li.textContent = `${e.date} – Flow: ${capitalize(e.flow)} – Symptoms: ${e.symptoms}`;
+    periodList.appendChild(li);
+  });
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
